@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="LabClinico.Domain/LabClinico.Domain.csproj" Id="4753d532-b27e-4d6b-ae87-9b0ae1b8ff27" />
+  <Project Path="LabClinico.Infrastructure/LabClinico.Infrastructure.csproj" Id="5d8acd9a-08a5-43f3-8499-332d00563ed3" />
   <Project Path="LabClinicoAPI1/LabClinicoAPI1.csproj" />
 </Solution>

@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LabClinicoAPI1.Data;
-using LabClinicoAPI1.Models;
+﻿using LabClinico.Domain.Entities;
+using LabClinico.Domain.Core; 
+using Microsoft.AspNetCore.Mvc;
 
 namespace LabClinicoAPI1.Controllers
 {
@@ -9,80 +8,40 @@ namespace LabClinicoAPI1.Controllers
     [ApiController]
     public class PruebasController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IPruebaRepository _pruebaRepository;
 
-        public PruebasController(ApplicationDbContext context)
+      
+        public PruebasController(IPruebaRepository pruebaRepository)
         {
-            _context = context;
+            _pruebaRepository = pruebaRepository;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Prueba>>> GetPruebas()
         {
-            return await _context.Pruebas.ToListAsync(); 
+            var pruebas = await _pruebaRepository.GetAllAsync();
+            return Ok(pruebas);
         }
-
         [HttpGet("{id}")]
         public async Task<ActionResult<Prueba>> GetPrueba(int id)
         {
-            var prueba = await _context.Pruebas.FindAsync(id);
+            var prueba = await _pruebaRepository.GetByIdAsync(id);
 
             if (prueba == null)
             {
-                return NotFound();
+                return NotFound(new { mensaje = "La prueba de laboratorio no fue encontrada." });
             }
 
-            return prueba;
+            return Ok(prueba);
         }
-
         [HttpPost]
         public async Task<ActionResult<Prueba>> PostPrueba(Prueba prueba)
         {
-            _context.Pruebas.Add(prueba);
-            await _context.SaveChangesAsync();
+           
+            await _pruebaRepository.AddAsync(prueba);
+            await _pruebaRepository.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetPrueba), new { id = prueba.Id }, prueba);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutPrueba(int id, Prueba prueba)
-        {
-            if (id != prueba.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(prueba).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Pruebas.Any(e => e.Id == id))
-                {
-                    return NotFound();
-                }
-                throw;
-            }
-
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePrueba(int id)
-        {
-            var prueba = await _context.Pruebas.FindAsync(id);
-            if (prueba == null)
-            {
-                return NotFound();
-            }
-
-            _context.Pruebas.Remove(prueba);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return CreatedAtAction(nameof(GetPrueba), new { id = prueba.IdPrueba }, prueba);
         }
     }
 }

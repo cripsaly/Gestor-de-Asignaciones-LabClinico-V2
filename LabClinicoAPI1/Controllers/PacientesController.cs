@@ -1,87 +1,54 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LabClinicoAPI1.Data;
-using LabClinicoAPI1.Models;
+using LabClinico.Domain.Entities;
+using LabClinico.Infrastructure.Interfaces;
 
 namespace LabClinicoAPI1.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class PacientesController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IPacienteRepository _repository;
 
-        public PacientesController(ApplicationDbContext context)
+        public PacientesController(IPacienteRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Paciente>>> GetPacientes()
+        public async Task<IActionResult> GetAll()
         {
-            return await _context.Pacientes.ToListAsync();
+            var pacientes = await _repository.GetAllAsync();
+            return Ok(pacientes);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Paciente>> GetPaciente(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var paciente = await _context.Pacientes.FindAsync(id);
-
-            if (paciente == null)
-            {
-                return NotFound(new { mensaje = "Paciente no encontrado" });
-            }
-
-            return paciente;
+            var paciente = await _repository.GetByIdAsync(id);
+            if (paciente == null) return NotFound("Paciente no encontrado");
+            return Ok(paciente);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Paciente>> PostPaciente(Paciente paciente)
+        public async Task<IActionResult> Create([FromBody] Paciente paciente)
         {
-            _context.Pacientes.Add(paciente);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetPaciente), new { id = paciente.Id }, paciente);
+            await _repository.AddAsync(paciente);
+            return CreatedAtAction(nameof(GetById), new { id = paciente.Id }, paciente);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPaciente(int id, Paciente paciente)
+        public async Task<IActionResult> Update(int id, [FromBody] Paciente paciente)
         {
-            if (id != paciente.Id)
-            {
-                return BadRequest(new { mensaje = "El ID no coincide" });
-            }
-
-            _context.Entry(paciente).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Pacientes.Any(e => e.Id == id))
-                {
-                    return NotFound();
-                }
-                throw;
-            }
-
+            if (id != paciente.Id) return BadRequest("El ID no coincide");
+            await _repository.UpdateAsync(paciente);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePaciente(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var paciente = await _context.Pacientes.FindAsync(id);
-            if (paciente == null)
-            {
-                return NotFound();
-            }
-
-            _context.Pacientes.Remove(paciente);
-            await _context.SaveChangesAsync();
-
+            await _repository.DeleteAsync(id);
             return NoContent();
         }
     }
